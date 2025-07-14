@@ -464,8 +464,15 @@ const Doctor = ()=>{
         doctorId: doc.doctorId,
         userId: doc.userId
     }));
+    const [alreadySelectedDates, setAlreadySelectedDates] = useState([]);
 
+const fetchAlreadySelectedDates = async (doctorId)=>{
+    const response = await axiosInstance.get(`http://localhost:9093/api/availabilities/find-selected-dates-by-doctor-id/${doctorId}`).then(res=>{
+        setAlreadySelectedDates(res.data.data)
+        console.log(res.data.data);
+    })
 
+}
     return (
         <>
             <BootstrapDialog
@@ -505,7 +512,9 @@ const Doctor = ()=>{
                     </Typography>
                     <Box width="500px">
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DateCalendar value={selectedDate} onChange={(newValue) => setSelectedDate(newValue)} />
+                            <DateCalendar  shouldDisableDate={(date) =>
+                                alreadySelectedDates.includes(date.format('YYYY-MM-DD'))
+                            } value={selectedDate} onChange={(newValue) => setSelectedDate(newValue)} />
 
                         <Box sx={{
                             display:"flex",
@@ -941,7 +950,10 @@ const Doctor = ()=>{
                                                             </IconButton>
                                                                 <IconButton>
                                                                     <CalendarMonthIcon onClick={()=>{
-                                                                        handleClickOpenModal(row)
+                                                                        fetchAlreadySelectedDates(row.doctorId).then(()=>{
+                                                                            handleClickOpenModal(row)
+                                                                        })
+
                                                                     }} />
                                                                 </IconButton>
                                                                 </>

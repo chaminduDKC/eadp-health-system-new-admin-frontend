@@ -188,7 +188,6 @@ const Patient = ()=>{
         userId:pat.userId
     }));
 
-    const [selectedDate, setSelectedDate] = useState(null);
     const [openModal, setOpenModal] = useState(false);
 
     const [modalData, setModalData] = useState({})

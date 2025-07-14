@@ -590,9 +590,8 @@ const Doctor = ()=>{
             {
                 alertStatus !== "" && (
                     <Box sx={{
-                        width: "50%",
+                        width: "100%",
                         position: "fixed",
-                        left: "50%",
                         top: "6vh",
                         zIndex: 1000,
                         transform: "translateX(-50%)"
@@ -957,27 +956,6 @@ const Doctor = ()=>{
                                                 <Box sx={{
                                                     marginTop:"6px"
                                                 }}>
-                                                    {/*<IconButton onClick={()=>{*/}
-                                                    {/*    if(window.confirm("Are you sure you want to delete this doctor?")) {*/}
-                                                    {/*        deleteDoctor(row.doctorId, row.userId).then(()=>{*/}
-                                                    {/*            fetchDoctors().then(()=>{*/}
-
-                                                    {/*            })*/}
-                                                    {/*        })*/}
-                                                    {/*    }*/}
-                                                    {/*}}>*/}
-                                                    {/*    <DeleteIcon color="error" />*/}
-
-                                                    {/*</IconButton>*/}
-                                                    {/*<IconButton onClick={()=>{*/}
-                                                    {/*    // if(window.confirm("Are you sure you want to edit this doctor?")) {*/}
-                                                    {/*    //     editDoctor(row);*/}
-                                                    {/*    // }*/}
-                                                    {/*}}>*/}
-                                                    {/*    <EditIcon />*/}
-
-                                                    {/*</IconButton>*/}
-
 
                                                 </Box>
                                             </TableRow>

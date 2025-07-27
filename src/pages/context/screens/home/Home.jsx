@@ -89,7 +89,7 @@ const Home = ()=>{
         <>
             {
                 isError && (
-                    <Box sx={{ width: '100%' }}>
+                    <Box sx={{ width: '50%', margin:"0 auto", position:"absolute", top:"65px", right:"0", left:"0" }}>
                         <Collapse in={open}>
                             <Alert
                                 severity="error"

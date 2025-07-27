@@ -8,6 +8,7 @@ import Patient from "./pages/context/screens/patient/Patient.jsx";
 import Channeling from "./pages/context/screens/channeling/Channeling.jsx";
 import Recent from "./pages/context/screens/recent/Recent.jsx";
 import Review from "./pages/context/screens/review/Review.jsx";
+import {startTokenRefreshInterval} from "./util/axiosInstance.js";
 
 
 function isValidToken(token) {
@@ -16,6 +17,7 @@ function isValidToken(token) {
 }
 
 function App() {
+
     const [isAuthenticated, setIsAuthenticated] = useState(isValidToken(localStorage.getItem("access_token")));
     const [email, setEmail] = useState("");
     useEffect(() => {
@@ -26,6 +28,11 @@ function App() {
         setIsAuthenticated(true);
         setEmail(userEmail);
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem("access_token");
+        if (token) startTokenRefreshInterval();
+    }, []);
 
     return (
 

@@ -1,12 +1,11 @@
 import React, {useState} from 'react';
-import {Box, Button, Checkbox, FormControlLabel, TextField, Typography} from "@mui/material";
+import {Box, Button, Checkbox, CircularProgress, FormControlLabel, TextField, Typography} from "@mui/material";
 import {useNavigate} from "react-router-dom";
 import axios from "axios";
 
 
 const CookieManagerService = {
     set:(token, key)=> localStorage.setItem(key, token),
-    get: (key) => localStorage.getItem(key),
     tokenIsExists:(key)=> !!localStorage.getItem(key),
 };
 
@@ -18,13 +17,16 @@ const Login = ({ onLogin }) => {
 
 
 
+
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e)=>{
+        setLoading(true);
         e.preventDefault();
 
         const params = new URLSearchParams();
@@ -42,7 +44,7 @@ const Login = ({ onLogin }) => {
             );
 
             const token = response.data.access_token;
-            console.log(token)
+
             const refreshToken = response.data.refresh_token;
             // Set email in context after successful login
             CookieManagerService.set(token, "access_token")
@@ -58,18 +60,20 @@ const Login = ({ onLogin }) => {
                     navigate("/context");
                 }
             } else {
+                setLoading(false);
                 alert("You need administrator privileges to access this application.");
             }
 
         } catch (e){
             console.log(e)
+            setLoading(false);
             alert("login failed")
         }
 
     }
-    // const isValidEmail = /\S+@\S+\.\S+/.test(username);
-    // const isValidPassword = /^(?=.*[@&$])[A-Za-z0-9@&$]{6,}$/.test(password);
-    // const isValidForm = isValidEmail && isValidPassword;
+    const isValidEmail = /\S+@\S+\.\S+/.test(username);
+    const isValidPassword = /^(?=.*[@&$])[A-Za-z0-9@&$]{6,}$/.test(password);
+    const isValidForm = isValidEmail && isValidPassword;
 
 
     return (
@@ -113,7 +117,9 @@ const Login = ({ onLogin }) => {
 
                     />
                     {/*<Button type="submit" variant="contained" color="secondary" disabled={loading || !isValidForm} fullWidth={true}>Login</Button>*/}
-                    <Button type="submit" variant="contained" color="secondary"  fullWidth={true}>Login</Button>
+                    <Button type="submit" variant="contained" color="secondary" disabled={!isValidForm} fullWidth={true}>
+                        {loading ? <CircularProgress /> : "Login"}
+                    </Button>
                 </form>
 
             </Box>

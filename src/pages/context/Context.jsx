@@ -8,7 +8,9 @@ const Context = () => {
         <div >
             <Header  />
             <div className="context-container" style={{
-                paddingTop:"60px"
+                paddingTop:"6vh",
+                paddingBottom:"4vh",
+
             }}>
                 <Outlet />
             </div>

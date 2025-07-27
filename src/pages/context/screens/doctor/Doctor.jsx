@@ -1,6 +1,10 @@
 import './doctor.css';
+import AlertHook from '../../../../util/Alert.js'
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import {
-    Alert,
+    Alert, Autocomplete,
     Box,
     Button,
     Checkbox,
@@ -18,6 +22,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Typography from '@mui/material/Typography';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialogContent-root': {
@@ -32,7 +37,7 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
 
 import React, {useEffect, useState} from "react";
 import axiosInstance from "../../../../util/axiosInstance.js";
-
+import MailIcon from '@mui/icons-material/Mail';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -41,29 +46,73 @@ import CloseIcon from "@mui/icons-material/Close";
 import DialogContentText from "@mui/material/DialogContentText";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {DateCalendar, DatePicker, LocalizationProvider, TimePicker} from "@mui/x-date-pickers";
+import PropTypes from "prop-types";
 
 
 const columns = [
     { id: 'name', label: 'Name', minWidth: 100 },
-    { id: 'phoneNumber', label: 'Phone', minWidth: 60 },
+    //{ id: 'phoneNumber', label: 'Phone', minWidth: 60 },
     // { id: 'email', label: 'Email', minWidth: 100 },
     { id: 'city', label: 'City', minWidth: 80 },
     { id: 'hospital', label: 'Hospital', minWidth: 100 },
     { id: 'specialization', label: 'Specialization', minWidth: 100 },
-    { id: 'address', label: 'Address', minWidth: 100 },
+   // { id: 'address', label: 'Address', minWidth: 100 },
 
 
 ];
 
+
+function CustomTabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+        </div>
+    );
+}
+
+CustomTabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+};
+
+function a11yProps(index) {
+    return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+    };
+}
+
+
 const Doctor = ()=>{
+
+    const [value, setValue] = React.useState(0);
+
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+    };
+
+
+    const {open, alertStatus, showAlert, closeAlert} = AlertHook();
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("")
+    const [newEmail, setNewEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [newPassword, setNewPassword] = useState("")
     const [specialization, setSpecialization] = useState("")
     const [phone, setPhone] = useState("")
     const [address, setAddress] = useState("")
     const [showPassword, setShowPassword] = useState(false)
+    const [showModalPassword, setShowModalPassword] = useState(false)
     const [hospital, setHospital] = useState("")
     const [city, setCity] = useState("")
     const [experience, setExperience] = useState("");
@@ -71,61 +120,28 @@ const Doctor = ()=>{
 
     const hospitals = [
         {
-            value: "Matara",
-            label: "Matara General Hospital"
+            value: "General Hospital - Matara",
+            label: "General Hospital = Matara"
         },
         {
-            value: "Galle",
-            label: "Galle General Hospital"
+            value: "Asiri Hospital - Matara",
+            label: "Asiri Hospital - Matara"
         },
         {
-            value: "Pasgoda",
-            label: "Pasgoda Hospital"
+            value: "Labeema Hospital - Kotawila",
+            label: "Labeema Hospital - Kotawila"
         },
         {
-            value: "Deniyaya",
-            label: "Deniyaya Hospital"
+            value: "Karapitiya Teaching Hospital - Galle",
+            label: "Karapitiya Teaching Hospital - Galle"
+        },
+        {
+            value: "Ruhunu Hospital - Galle",
+            label: "Ruhunu Hospital - Galle"
         }
 
     ]
-    const cities = [
-        {
-            value: "Matara",
-            city: "Matara",
-        },
-        {
-            value: "Galle",
-            city: "Galle",
-        },
-        {
-            value: "Pasgoda",
-            city: "Pasgoda",
-        },
-        {
-            value: "Deniyaya",
-            city: "Deniyaya",
-        },
-    ]
-    const experiences = [
-        {
-            value: "1",
-        },
-        {
-            value: "2"
-        },
-        {
-            value: "3",
-        },
-        {
-            value: "4",
-        },
-        {
-            value: "5",
-        },
-        {
-            value: "5+",
-        },
-    ]
+    const cities = ["Matara", "Galle"];
     const [doctors, setDoctors] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -134,64 +150,95 @@ const Doctor = ()=>{
     const [editDoctorId, setEditDoctorId] = useState(null);
     const [doctorCount, setDoctorCount] = useState(0);
 
-    const [open, setOpen] = useState(true);
-
-    const [alertStatus, setAlertStatus] = useState("");
 
     const [openModal, setOpenModal] = useState(false);
 
     const [modalData, setModalData] = useState({})
 
-
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
-
-
     const [selectedDate, setSelectedDate] = useState(null);
 
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+    // to add new hospital
+    const [openAddHospitalModal, setOpenAddHospitalModal] = useState(false);
+    const [hospitalName, setHospitalName] = useState("");
+
+    const saveHospital = async ()=>{
+    await axiosInstance.post("http://localhost:9091/api/hospitals/save-hospital", {hospitalName:hospitalName}).then((res)=>{
+            console.log(res.data)
+            setOpenAddHospitalModal(false)
+            showAlert("success-add-h")
+            setHospitalName("")
+        }).catch((err)=>{
+            console.log(err)
+            showAlert("failed-add-h")
+        })
+    }
+
+    // to add specialization
+
+    const [openSpecializationModal, setOpenAddSpecializationModal] = useState(false)
+    const [specializationName, setSpecializationName] = useState("")
+    const [specializations, setSpecializations] = useState([])
+    const [specName, setSpecName] = useState("")
+    // const [specId, setSpecId] = useState("")
+
+    const saveSpecialization = async ()=>{
+        await axiosInstance.post("http://localhost:9091/api/specializations/create-specialization", {specialization:specializationName}).then((res)=>{
+            console.log(res.data)
+            setOpenAddSpecializationModal(false)
+            showAlert("success-add-s")
+            setSpecializationName("")
+        }).catch((err)=>{
+            console.log(err)
+            showAlert("failed-add-s")
+        })
+    }
 
 
-    const handleClickOpenModal = (row) => {
-        setOpenModal(true);
-        console.log(row)
-        setModalData(row)
-    };
+
+
     const handleCloseModal = () => {
         setOpenModal(false);
+        setOpenAddHospitalModal(false);
+        setOpenAddSpecializationModal(false);
+        setOpenModalProfileDetails(false);
     };
 
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [openModalProfileDetails, setOpenModalProfileDetails] = useState(false);
 
     const handleCloseDeleteModal = ()=>{
         setDeleteModalOpen(false);
     }
 
     const handleSubmit = async (e) => {
-        setAlertStatus("");
+
         if(!name ||  !address || !phone || !specialization  || !hospital || !city || !experience || !licenceNo) {
-            setOpen(true)
-            setAlertStatus("empty-fields")
+            showAlert("empty-fields")
             return;
         }
+
+
+
         e.preventDefault();
         setLoading(true)
-        setAlertStatus("");
 
         if(isEditMode){
 
             e.preventDefault();
             console.log("Update mode is on")
             const doctorRequest = {
-                email: email,
                 name:name,
-                password:password,
                 address:address,
                 phone:phone,
                 hospital:hospital,
                 city:city,
                 experience:experience,
-                specialization:specialization,
+                specialization:specName,
                 licenceNo:licenceNo
             }
             console.log(doctorRequest)
@@ -203,23 +250,18 @@ const Doctor = ()=>{
 
                     }
                 )
-                setOpen(true)
-                setAlertStatus("success-update")
-                setIsEditMode(false)
-                setLoading(false)
-                clearAllFields();
-                 await fetchDoctors();
+
+
+                showAlert("success-update")
+
             } catch (e) {
-                setOpen(true)
-                setAlertStatus("failed-update")
+                showAlert("failed-update")
                 console.log("Failed to update with error "+ e)
             }
 
 
         } else {
             if(!name ||  !address || !phone || !specialization  || !hospital || !city || !experience || !licenceNo || !email || !password){
-                setOpen(true)
-                setAlertStatus("empty-fields")
                 return;
             }
 
@@ -233,6 +275,7 @@ const Doctor = ()=>{
                     password: password,
                 };
 
+                console.log(userRequest)
                 // Step 2: Send request to user-service
 
                 const userResponse = await axiosInstance.post(
@@ -252,13 +295,14 @@ const Doctor = ()=>{
                     name: userName,
                     email: email,
                     phoneNumber: phone,
-                    specialization: specialization,
+                    specialization: specName,
                     experience: experience,
-                    hospital: hospital,
+                    hospital: hospital.value,
                     address: address,
                     licenseNo: licenceNo,
                     city: city
                 };
+                console.log(doctorRequest)
                 // Step 4: Send request to doctor-service
                 await axiosInstance.post(
                     "http://localhost:9091/api/doctors/create-doctor",
@@ -266,54 +310,57 @@ const Doctor = ()=>{
                     {
                     }
                 );
-                setOpen(true)
-                setAlertStatus("success-create")
+                console.log("Created")
+                showAlert("success-create")
                 await fetchDoctors();
                 clearAllFields();
 
             } catch (error) {
+                showAlert("failed-create")
                 setLoading(false)
                 console.error("Error creating doctor:", error);
-                setOpen(true)
-                setAlertStatus("failed-create")
+
             }
         }
 
     };
-    const countAll = async () => {
-        try {
-            const response = await axiosInstance.get("http://localhost:9091/api/doctors/count-all", {
-            })
 
-            setDoctorCount(response.data.data);
-            console.log(response.data.data);
-        } catch (e) {
-            console.log(" E " + e)
-        }
+    const isValidEmail = /\S+@\S+\.\S+/.test(email);
+    const isValidName =/^[A-Za-z\s]+$/.test(name);
+    const isValidPhone =/^\+?\d{9,12}$/.test(phone);
+    const isValidLicenceNo =/^[A-Za-z0-9\-\/]+$/.test(licenceNo);
+    const isValidAddress =/^[A-Za-z0-9\s,.\-#\/]+$/.test(address);
+    const isValidPassword = /^(?=.*[@&$])[A-Za-z0-9@&$]{6,}$/.test(password);
+    const isValidExperience =/^[0-9]{1,2}$/.test(experience);
+    // const isValidForm = isValidEmail && isValidPassword && isValidName && isValidPhone && isValidLicenceNo && isValidAddress && isValidExperience;
 
-    }
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [searchText, setSearchText] = useState("")
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
+        fetchDoctors(newPage, rowsPerPage, searchText);
     };
 
     const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(+event.target.value);
+        const newSize = parseInt(event.target.value, 10);
+        setRowsPerPage(newSize);
         setPage(0);
+        fetchDoctors(0, newSize, searchText);
+
     };
 
 
-    const [searchText, setSearchText] = useState("")
+
 
     const fetchDoctors = async (pageNumber = page, size = rowsPerPage, search = searchText) => {
-        setAlertStatus("");
+
         setLoading(false);
         setError(null);
         setUpdate(false);
-        await countAll();
+
 
         try {
             const response = await axiosInstance.get('/doctors/find-all-doctors', {
@@ -326,13 +373,14 @@ const Doctor = ()=>{
             });
 
             setDoctors(response.data.data.dataList);
-            console.log(response.data.data.dataList);
+            setDoctorCount(response.data.data.dataCount)
+
 
         } catch (err) {
+            showAlert("failed-fetch")
             console.log("Error is " + err);
             setError(err.message || 'Something went wrong');
-            setOpen(true);
-            setAlertStatus("failed-fetch");
+
 
         } finally {
             setLoading(false);
@@ -341,6 +389,7 @@ const Doctor = ()=>{
 
 
     const deleteDoctor = async (doctorId, userId)=>{
+        console.log(doctorId, userId)
 
         setUpdate(false)
         try{
@@ -353,12 +402,11 @@ const Doctor = ()=>{
                 }
             )
 
-            setOpen(true)
-            setAlertStatus("success-delete")
+
+            showAlert("success-delete")
             console.log(response)
         } catch (e){
-            setOpen(true)
-            setAlertStatus("failed-delete")
+            showAlert("failed-delete")
             console.log(e)
         }
     }
@@ -379,6 +427,7 @@ const Doctor = ()=>{
         setIsEditMode(true);
         setEditDoctorId(doc.doctorId)
         console.log(doc.doctorId);
+        console.log(doc)
         clearAllFields();
         setData(doc);
     }
@@ -400,7 +449,8 @@ const Doctor = ()=>{
     }
 
     useEffect(() => {
-        fetchDoctors()
+        fetchDoctors(page, rowsPerPage, searchText)
+        fetchSpecializations();
     }, []);
 
     const handleAvailableTimes = async (doctorId)=>{
@@ -438,9 +488,11 @@ const Doctor = ()=>{
             }
             const response = await axiosInstance.post("http://localhost:9093/api/availabilities/save-availabilities", requestBody).then(
                 response =>{
+                    showAlert("success-set-date")
                     console.log(response)
                 }
             ).catch(()=>{
+                showAlert("failed-set-date")
                 console.log("Failed Request")
             })
             console.log(response);
@@ -466,24 +518,97 @@ const Doctor = ()=>{
     }));
     const [alreadySelectedDates, setAlreadySelectedDates] = useState([]);
 
-const fetchAlreadySelectedDates = async (doctorId)=>{
-    const response = await axiosInstance.get(`http://localhost:9093/api/availabilities/find-selected-dates-by-doctor-id/${doctorId}`).then(res=>{
+    const fetchAlreadySelectedDates = async (doctorId)=>{
+    await axiosInstance.get(`http://localhost:9093/api/availabilities/find-selected-dates-by-doctor-id/${doctorId}`).then(res=>{
+
         setAlreadySelectedDates(res.data.data)
         console.log(res.data.data);
     })
 
 }
+
+    const fetchSpecializations = async ()=>{
+        try {
+            const response = await axiosInstance.get("http://localhost:9091/api/specializations/find-all-specializations",{params: {searchText:""}}
+            );
+            setSpecializations(response.data.data);
+            console.log(response.data.data);
+        } catch (error) {
+            console.error("Error fetching specializations:", error);
+        }
+    }
+
+    const handleChangePassword = async ()=>{
+        console.log(modalData.name)
+        console.log(modalData.userId)
+        await axiosInstance.put(`http://localhost:9090/api/users/update-password/${modalData.userId}`, {}, {params:{
+                password:newPassword,
+                role:"doctor"
+            }} ).then((res)=>{
+                setNewPassword("")
+            console.log(res.data)
+            showAlert("success-change-password")
+            setPassword("")
+        }).catch((err)=>{
+            console.log(err)
+            showAlert("failed-change-password")
+        })
+    }
+
+    const handleChangeEmail = async ()=>{
+         await axiosInstance.put(`http://localhost:9090/api/users/update-email/${modalData.userId}`, {}, {params:{
+                email:newEmail,
+                 role:"doctor"
+            }} ).then((res)=>{
+                setNewEmail("")
+             fetchDoctors(page, rowsPerPage, searchText)
+                console.log(res.data)
+                showAlert("success-change-email")
+                setEmail("")
+            }).catch((err)=>{
+                console.log(err)
+                showAlert("failed-change-email")
+            })
+
+    }
     return (
         <>
+            { isAlertOpen && (
+                <Box sx={{ width: '50%', margin:"0 auto", position:"absolute", top:"65px", right:"0", left:"0", zIndex:"14" }}>
+                    <Collapse in={open}>
+                        <Alert
+                            severity="error"
+                            action={
+                                <IconButton
+                                    aria-label="close"
+                                    color="inherit"
+                                    onClick={() => {
+                                        setIsAlertOpen(false);
+                                    }}
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                            }
+                        >
+                            Failed to fetch data. Please try again later.
+                        </Alert>
+                    </Collapse>
+                </Box>
+            )}
+
+
+            {/*for profile details modal*/}
+
             <BootstrapDialog
                 sx={{
-
+                    height:"730px",
+                    minHeight:"730px"
                 }}
                 onClose={handleCloseModal}
                 aria-labelledby="customized-dialog-title"
-                open={openModal}
+                open={openModalProfileDetails}
             >
-                <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+                <DialogTitle sx={{ m: 0, p: 1 }} id="customized-dialog-title">
 
                     {modalData.name}
                     <IconButton>
@@ -492,6 +617,7 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
 
                         }} />
                     </IconButton>
+
                 </DialogTitle>
 
                 <IconButton
@@ -507,53 +633,304 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                     <CloseIcon />
                 </IconButton>
                 <DialogContent dividers>
-                    <Typography gutterBottom>
-                        Select available time period for this doctor
-                    </Typography>
-                    <Box width="500px">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DateCalendar  shouldDisableDate={(date) =>
-                                alreadySelectedDates.includes(date.format('YYYY-MM-DD'))
-                            } value={selectedDate} onChange={(newValue) => setSelectedDate(newValue)} />
 
-                        <Box sx={{
-                            display:"flex",
-                            gap:"20px"
-                        }}>
-                        <TimePicker
-                            label="Start time"
-                            value={startTime}
-                            onChange={(newValue) => setStartTime(newValue)}
-                        />
+                    <Box sx={{ width: '500px' }}>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+                                <Tab label="Calendar" {...a11yProps(0)} />
+                                <Tab label="Profile" {...a11yProps(1)} />
+                                <Tab label="Security" {...a11yProps(2)} />
+                            </Tabs>
+                        </Box>
+                        <CustomTabPanel value={value} index={0}>
+                            {/*Calendar*/}
+                            <Box width="450px" sx={{
+                                display:"flex",
+                                flexDirection:"column",
+                                alignItems:"center",
+                                width:"100%",
+                                boxShadow:"rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
+                                borderRadius:"10px",
+                                marginTop:"12px"
+                            }}>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DateCalendar  shouldDisableDate={(date) =>
+                                        alreadySelectedDates.includes(date.format('YYYY-MM-DD'))
+                                    } value={selectedDate} onChange={(newValue) => setSelectedDate(newValue)} />
+
+                                    <Box sx={{
+                                        width:"95%",
+                                        display:"flex",
+                                        gap:"20px"
+                                    }}>
+                                        <TimePicker
+                                            label="Start time"
+                                            value={startTime}
+                                            onChange={(newValue) => setStartTime(newValue)}
+                                        />
 
 
-                        <TimePicker
-                            label="End time"
-                            value={endTime}
-                            onChange={(newValue) => setEndTime(newValue)}
-                        />
-                       </Box>
-                    </LocalizationProvider>
+                                        <TimePicker
+                                            label="End time"
+                                            value={endTime}
+                                            onChange={(newValue) => setEndTime(newValue)}
+                                        />
+                                    </Box>
+                                </LocalizationProvider>
+
+                            <Box width="100%" display="flex" justifyContent="flex-end">
+                                <Button
+                                    disabled={startTime == null || endTime == null || selectedDate == null}
+                                    sx={{
+                                        backgroundColor:"var(--color-green-dark)",
+                                        color:"var(--color-cream)",
+                                        marginTop:"10px",
+                                        paddingX:"20px",
+                                        marginBottom:"10px",
+                                        marginRight:"10px"
+                                    }} autoFocus onClick={()=>{
+                                    handleAvailableTimes(modalData.doctorId).then(()=>{
+                                        // handleCloseModal();
+                                    })
+                                }}>
+                                    Save
+                                </Button>
+                            </Box>
+                            </Box>
+                        </CustomTabPanel>
+                        <CustomTabPanel value={value} index={1}>
+                           <Box>
+                               <Box sx={{
+                                   display:"flex",
+                                   flexDirection:"column",
+                                   alignItems:"center",
+                                   width:"100%",
+                                   boxShadow:"rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
+                                   borderRadius:"10px"
+
+                               }}>
+                                   {
+                                       modalData.image? (
+                                           <img style={{width:"100px", height:"100px", borderRadius:"50%"}} src={modalData.image} alt="profile"/>
+                                       ):(
+
+                                           <IconButton sx={{
+                                               width:"160px",
+                                               height:"160px",
+                                               borderRadius:"50%"
+                                           }}>
+                                               <AccountCircleIcon sx={{
+                                                   width:"160px",
+                                                   height:"160px",
+                                                   borderRadius:"50%"
+                                               }} />
+                                           </IconButton>
+
+                                       )}
+                                   <Typography variant="h6">
+                                       {modalData.name}
+                                   </Typography>
+                               </Box>
+                               <Box sx={{display:"flex", alignItems:"center", justifyContent:"space-around"}}>
+                                   <Box sx={{display:"flex", gap:"10px", alignItems:"center", marginTop:"10px"}}>
+                                       <i className="fa-solid fa-envelope"></i>
+                                       <Typography>
+                                           {modalData.email}
+                                       </Typography>
+                                   </Box>
+                                   <Box sx={{display: "flex", gap: "10px", alignItems: "center", marginTop: "10px"}}>
+                                       <i className="fa-solid fa-location-dot"></i>
+                                       <Typography>
+                                           {modalData.address}
+                                       </Typography>
+                                   </Box>
+                               </Box>
+                               <Box
+                                   sx={{
+                                       display: "grid",
+                                       gridTemplateColumns: "1fr 1fr",
+                                       gap: "18px",
+                                       padding: "20px",
+                                       marginTop: "12px",
+                                       width: "100%",
+                                       boxShadow:
+                                           "rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
+                                       borderRadius: "16px",
+                                   }}
+                               >
+                                   <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                       <i className="fa-solid fa-house" style={{ color: "#4caf50", fontSize: 20 }}></i>
+                                       <Box>
+                                           <Typography variant="caption" color="textSecondary">
+                                               City
+                                           </Typography>
+                                           <Typography variant="body1">{modalData.city}</Typography>
+                                       </Box>
+                                   </Box>
+                                   <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                       <i className="fa-solid fa-phone" style={{ color: "#2196f3", fontSize: 20 }}></i>
+                                       <Box>
+                                           <Typography variant="caption" color="textSecondary">
+                                               Phone
+                                           </Typography>
+                                           <Typography variant="body1">{modalData.phoneNumber}</Typography>
+                                       </Box>
+                                   </Box>
+                                   <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                       <i className="fa-solid fa-user-doctor" style={{ color: "#9c27b0", fontSize: 20 }}></i>
+                                       <Box>
+                                           <Typography variant="caption" color="textSecondary">
+                                               Specialization
+                                           </Typography>
+                                           <Typography variant="body1">{modalData.specialization}</Typography>
+                                       </Box>
+                                   </Box>
+                                   <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                       <i className="fa-solid fa-hospital" style={{ color: "#ff9800", fontSize: 20 }}></i>
+                                       <Box>
+                                           <Typography variant="caption" color="textSecondary">
+                                               Hospital
+                                           </Typography>
+                                           <Typography variant="body1">{modalData.hospital}</Typography>
+                                       </Box>
+                                   </Box>
+                                   <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                       <i className="fa-solid fa-id-card" style={{ color: "#607d8b", fontSize: 20 }}></i>
+                                       <Box>
+                                           <Typography variant="caption" color="textSecondary">
+                                               Licence No
+                                           </Typography>
+                                           <Typography variant="body1">{modalData.licenceNo}</Typography>
+                                       </Box>
+                                   </Box>
+                               </Box>
+
+                           </Box>
+                        </CustomTabPanel>
+                        <CustomTabPanel value={value} index={2}>
+                            <Box>
+                                <Box sx={{
+                                    display:"flex",
+                                    flexDirection:"column",
+                                    alignItems:"center",
+                                    width:"100%",
+                                    boxShadow:"rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
+                                    borderRadius:"10px"
+
+                                }}>
+                                    {
+                                        modalData.image? (
+                                            <img style={{width:"100px", height:"100px", borderRadius:"50%"}} src={modalData.image} alt="profile"/>
+                                        ):(
+
+                                            <IconButton sx={{
+                                                width:"160px",
+                                                height:"160px",
+                                                borderRadius:"50%"
+                                            }}>
+                                                <AccountCircleIcon sx={{
+                                                    width:"160px",
+                                                    height:"160px",
+                                                    borderRadius:"50%"
+                                                }} />
+                                            </IconButton>
+
+                                        )}
+                                    <Typography variant="h6">
+                                        {modalData.name}
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Box sx={{ mt: 1.5, width: "100%" }}>
+                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
+                                            Change Password
+                                        </Typography>
+                                        <Box sx={{
+                                            display: "flex",
+                                            gap: 2, alignItems: "center",
+
+                                            mb: 2
+                                        }}>
+                                            <TextField
+                                                label="New Password"
+                                                type={showModalPassword ? "text" : "password"}
+                                                variant="filled"
+                                                fullWidth
+                                                sx={{ backgroundColor: "var(--bg-secondary)" }}
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                            />
+
+                                            <Button
+                                                onClick={()=>{
+                                                    handleChangePassword()
+                                                }}
+                                                variant="contained"
+                                                sx={{
+                                                    backgroundColor: "var(--color-green-dark)",
+                                                    color: "var(--color-cream)",
+                                                    fontWeight: "bold",
+                                                    minWidth: 120,
+                                                    width: "180px",
+                                                }}
+                                            >
+                                                Update Password
+                                            </Button>
 
 
+                                        </Box>
+                                        <FormControlLabel style={{marginTop:"-30px"}} control={
+                                            <Checkbox
+                                                checked={showModalPassword}
+                                                onChange={e => setShowModalPassword(e.target.checked)}
+                                            />
+                                        }
+                                                          label="show password"
+                                                          sx={{color: "var(--text-primary)", marginTop: "10px"}}
+                                        />
+
+                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
+                                            Change Email
+                                        </Typography>
+                                        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                                            <TextField
+                                                label="New Email"
+                                                type="email"
+                                                variant="filled"
+                                                fullWidth
+                                                value={newEmail}
+                                                onChange={(e) => setNewEmail(e.target.value)}
+                                                sx={{ backgroundColor: "var(--bg-secondary)" }}
+                                            />
+                                            <Button
+                                                onClick={()=>{
+                                                    handleChangeEmail(modalData.userId)
+                                                }}
+                                                variant="contained"
+                                                sx={{
+                                                    backgroundColor: "var(--color-green-dark)",
+                                                    color: "var(--color-cream)",
+                                                    fontWeight: "bold",
+                                                    minWidth: 120,
+                                                    width: "180px",
+                                                }}
+                                            >
+                                                Update Email
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </CustomTabPanel>
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button
-                        disabled={startTime == null || endTime == null || selectedDate == null}
-                        sx={{
-                        backgroundColor:"var(--color-green-dark)",
-                        color:"var(--color-cream)"
-                    }} autoFocus onClick={()=>{
-                        handleAvailableTimes(modalData.doctorId).then(()=>{
-                            handleCloseModal();
-                        })
-                    }}>
-                        Save info
-                    </Button>
+
                 </DialogActions>
             </BootstrapDialog>
 
+
+            {/*delete modal*/}
 
             <React.Fragment>
                 <Dialog
@@ -584,10 +961,11 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                                 }}
                                 onClick={()=>{
                                     deleteDoctor(modalData.doctorId, modalData.userId).then(()=>{
-                                        fetchDoctors();
+                                        handleCloseDeleteModal();
+                                        setOpenModal(false);
+                                        setOpenModalProfileDetails(false)
+                                        fetchDoctors(page, rowsPerPage, searchText);
                                     })
-                                    setOpenModal(false);
-                                    handleCloseDeleteModal();
 
                                 }} >
                             Delete
@@ -597,14 +975,8 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
             </React.Fragment>
 
             {
-                alertStatus !== "" && (
-                    <Box sx={{
-                        width: "100%",
-                        position: "fixed",
-                        top: "6vh",
-                        zIndex: 1000,
-                        transform: "translateX(-50%)"
-                    }}>
+                open && (
+                    <Box sx={{ width: '50%', margin: "0 auto", position: "absolute", top: "65px", right: "0", left: "0", zIndex: "14" }}>
                         <Collapse in={open}>
                             <Alert
                                 severity={alertStatus.includes("success") ? "success" : "error"}
@@ -612,12 +984,9 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                                     <IconButton
                                         aria-label="close"
                                         color="inherit"
-                                        onClick={() => {
-                                            setAlertStatus("");
-                                            setOpen(false);
-                                        }}
+                                        onClick={closeAlert}
                                     >
-                                        <CloseIcon/>
+                                        <CloseIcon />
                                     </IconButton>
                                 }
                             >
@@ -626,10 +995,22 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                                 {alertStatus === "success-delete" && "Doctor deleted successfully!"}
                                 {alertStatus === "success-fetch" && "Doctors fetched successfully!"}
                                 {alertStatus === "failed-create" && "Failed to create doctor. Please try again."}
-                                {alertStatus === "failed-update" && "Failed to update doctor. Please try again"}
+                                {alertStatus === "failed-update" && "Failed to update doctor. Please try again."}
                                 {alertStatus === "failed-delete" && "Failed to delete doctor. Please try again."}
                                 {alertStatus === "failed-fetch" && "Failed to fetch doctors. Please try again."}
                                 {alertStatus === "empty-fields" && "Please fill all the fields."}
+                                {alertStatus === "success-set-date" && "Date and time selected successfully"}
+                                {alertStatus === "failed-set-date" && "Failed to select date and time"}
+                                {alertStatus === "success-add-h" && "Hospital added successfully"}
+                                {alertStatus === "success-add-s" && "Specialization added successfully"}
+                                {alertStatus === "failed-add-h" && "Failed to add hospital"}
+                                {alertStatus === "failed-add-s" && "Failed to add specialization"}
+                                {alertStatus === "failed-name" && "Invalid name"}
+                                {alertStatus === "failed-email" && "Invalid email"}
+                                {alertStatus === "failed-password" && "Invalid password"}
+                                {alertStatus === "failed-phone" && "Invalid phone number"}
+                                {alertStatus === "success-change-password" && "Password changed successfully"}
+                                {alertStatus === "failed-change-password" && "Failed to change the password"}
                             </Alert>
                         </Collapse>
                     </Box>
@@ -670,6 +1051,7 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
+
                     />
                     <TextField
                         sx={{
@@ -683,6 +1065,7 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                         margin="normal"
                         disabled={isEditMode}
                         fullWidth
+                        helperText={!isValidPassword ? "Password must contain at least one of @, &, or $ and be at least 6 characters long" :""}
                         required
                         type={showPassword ? "text" : "password"}
                         value={password}
@@ -697,7 +1080,7 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                                       label="show password"
                                       sx={{color: "var(--text-primary)", marginTop: "10px"}}
                     />
-                    <Box sx={{display: "flex", width: "100%", justifyContent: "space-between", gap: "10px"}}>
+                    <Box sx={{display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: "10px"}}>
                         <TextField
                             sx={{
                                 backgroundColor: 'var(--bg-secondary)',
@@ -730,22 +1113,36 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                             value={licenceNo}
                             onChange={e => setLicenceNo(e.target.value)}
                         />
-                        <TextField
+                        <Autocomplete
                             sx={{
                                 backgroundColor: 'var(--bg-secondary)',
                                 color: 'var(--text-primary)',
-                                input: {color: 'var(--text-primary)'},
-                                label: {color: 'var(--text-secondary)'}
+                                input: { color: 'var(--text-primary)' },
+                                label: { color: 'var(--text-secondary)' },
+                                marginTop: "10px"
                             }}
+                            value={specializations.find(p => p.specialization === specName) || null}
+                            onChange={(event, newValue) => {
+                                if (newValue) {
+                                    setSpecialization(newValue);     // full object
+                                    // patient ID
+                                    setSpecName(newValue.specialization); // just the name string
+
+                                } else {
+                                    // setDoctor(null);
+                                    // setDocId(null);
+                                    // setDocName("");
+                                }
+                            }}
+                            options={specializations}
+                            getOptionLabel={(option) => option.specialization || ""}
+                            isOptionEqualToValue={(option, value) => option.id === value.id}
                             fullWidth
-                            label="Specialization"
-                            variant="filled"
-                            margin="normal"
-                            required
-                            type="text"
-                            value={specialization}
-                            onChange={e => setSpecialization(e.target.value)}
+                            renderInput={(params) => <TextField {...params} label="Specializations" />}
                         />
+
+
+
                     </Box>
                     <TextField
                         sx={{
@@ -770,56 +1167,35 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                         gap: "10px",
                         marginTop: "20px"
                     }}>
-                        <TextField
+                        <Autocomplete
                             sx={{
                                 backgroundColor: 'var(--bg-secondary)',
                                 color: 'var(--text-primary)',
                                 input: {color: 'var(--text-primary)'},
-                                label: {color: 'var(--text-secondary)'}
+                                label: {color: 'var(--text-secondary)'},
+
                             }}
-                            id="outlined-select-hospital"
-                            select
-                            label="Select Hospital"
-                            variant="filled"
-                            fullWidth
                             value={hospital}
-                            onChange={e => setHospital(e.target.value)}
-                            helperText="Please select hospital"
-                        >
-                            {hospitals.map((option) => (
-                                <MenuItem key={option.value} value={option.value} sx={{
-                                    color: 'var(--text-primary)',
-                                    backgroundColor: 'var(--bg-secondary)'
-                                }}>
-                                    {option.label}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField
+                            onChange={(event, newValue) => setHospital(newValue)}
+                            options={hospitals}
+                            fullWidth
+                            renderInput={(params) => <TextField {...params} label="Hospital" />}
+                        />
+
+                        <Autocomplete
                             sx={{
                                 backgroundColor: 'var(--bg-secondary)',
                                 color: 'var(--text-primary)',
                                 input: {color: 'var(--text-primary)'},
-                                label: {color: 'var(--text-secondary)'}
+                                label: {color: 'var(--text-secondary)'},
                             }}
-                            id="outlined-select-city"
-                            select
-                            variant="filled"
-                            fullWidth
-                            label="Select City"
                             value={city}
-                            onChange={e => setCity(e.target.value)}
-                            helperText="Please select city"
-                        >
-                            {cities.map((option) => (
-                                <MenuItem key={option.value} value={option.value} sx={{
-                                    color: 'var(--text-primary)',
-                                    backgroundColor: 'var(--bg-secondary)'
-                                }}>
-                                    {option.city}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            onChange={(event, newValue) => setCity(newValue)}
+                            options={cities}
+                            fullWidth
+                            renderInput={(params) => <TextField {...params} label="City" />}
+                        />
+
                         <TextField
                             sx={{
                                 backgroundColor: 'var(--bg-secondary)',
@@ -828,27 +1204,29 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                                 label: {color: 'var(--text-secondary)'}
                             }}
                             id="outlined-select-experience"
-                            select
                             variant="filled"
                             fullWidth
-                            label="Select Experience"
+                            label="Experience in years"
+                            type="number"
                             value={experience}
                             onChange={e => setExperience(e.target.value)}
-                            helperText="Please select experience in years"
                         >
-                            {experiences.map((option) => (
-                                <MenuItem key={option.value} value={option.value} sx={{
-                                    color: 'var(--text-primary)',
-                                    backgroundColor: 'var(--bg-secondary)'
-                                }}>
-                                    {option.value}
-                                </MenuItem>
-                            ))}
+
                         </TextField>
                     </Box>
                     <Box mt={2} gap={2} display="flex" alignItems="center">
-                        <Button type="submit" onClick={(e) => handleSubmit(e)} variant="contained"
-                                disabled={loading}
+                        <Button type="submit" onClick={(e) => {
+                            handleSubmit(e).then(()=>{
+                                if(isEditMode){
+                                    console.log("Updated huto")
+                                    setIsEditMode(false)
+                                    setLoading(false)
+                                    clearAllFields();
+                                    fetchDoctors();
+                                }
+                            })
+                        }} variant="contained"
+
                                 sx={{
                                     backgroundColor: "var(--color-green-dark)",
                                     color: "var(--color-cream)",
@@ -906,7 +1284,7 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                 <hr />
 
                 <Paper sx={{width: '100%', overflow: 'hidden'}}>
-                    <TableContainer sx={{maxHeight: 575}}>
+                    <TableContainer sx={{maxHeight: 550}}>
                         <Table stickyHeader aria-label="sticky table">
                             <TableHead>
                                 <TableRow>
@@ -927,7 +1305,6 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                             </TableHead>
                             <TableBody>
                                 {rows
-                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                     .map((row) => {
 
                                         return (
@@ -937,29 +1314,37 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                                                     const value = row[column.id];
                                                     return (
                                                         <TableCell key={column.id} align={column.align}>
-                                                            {value}
-                                                            {column.id === "name" ?
+                                                            {column.id === "name" &&
                                                                 <>
-                                                            <IconButton>
-                                                                <EditIcon onClick={()=>{
-                                                                    editDoctor(row);
-                                                                }}
+                                                                    <IconButton>
+                                                                        <EditIcon onClick={()=>{
+                                                                            editDoctor(row);
+                                                                        }}
 
-                                                                />
+                                                                        />
 
-                                                            </IconButton>
-                                                                <IconButton>
-                                                                    <CalendarMonthIcon onClick={()=>{
-                                                                        fetchAlreadySelectedDates(row.doctorId).then(()=>{
-                                                                            handleClickOpenModal(row)
-                                                                        })
+                                                                    </IconButton>
+                                                                    <IconButton>
+                                                                        <SettingsIcon
+                                                                            sx={{
+                                                                                color:"var(--color-green-forest)",
+                                                                            }}
+                                                                            onClick={()=>{
 
-                                                                    }} />
-                                                                </IconButton>
+                                                                            fetchAlreadySelectedDates(row.doctorId).then(()=>{
+                                                                                setOpenModalProfileDetails(true)
+                                                                                setModalData(row)
+                                                                                console.log(row)
+                                                                            })
+
+                                                                        }} />
+                                                                    </IconButton>
                                                                 </>
-                                                                : ""
+
 
                                                             }
+                                                            {value}
+
 
 
                                                         </TableCell>
@@ -979,7 +1364,7 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                     <TablePagination
                         rowsPerPageOptions={[10, 25, 100]}
                         component="div"
-                        count={rows.length}
+                        count={doctorCount}
                         rowsPerPage={rowsPerPage}
                         page={page}
                         onPageChange={handleChangePage}
@@ -987,7 +1372,169 @@ const fetchAlreadySelectedDates = async (doctorId)=>{
                     />
                 </Paper>
             </div>
+
+            <BootstrapDialog
+                sx={{
+
+                }}
+                onClose={handleCloseModal}
+                aria-labelledby="customized-dialog-title"
+                open={openSpecializationModal}
+            >
+                <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+                    {/*title go here*/}
+                    <IconButton>
+
+                    </IconButton>
+                </DialogTitle>
+
+                <IconButton
+                    aria-label="close"
+                    onClick={()=>{
+                        console.log("close modal")
+                        handleCloseModal()
+                    }}
+                    sx={(theme) => ({
+                        position: 'absolute',
+                        right: 8,
+                        top: 8,
+                        color: theme.palette.grey[500],
+                    })}
+                >
+                    <CloseIcon />
+                </IconButton>
+                <DialogContent dividers>
+                    <Typography gutterBottom>
+
+                    </Typography>
+                    <Box width="500px">
+
+                        <form>
+                            <TextField
+                                id="specialization"
+                                label="Specialization"
+                                type="text"
+                                fullWidth
+                                value={specializationName}
+                                onChange={(e)=>{
+                                    setSpecializationName(e.target.value)
+                                }}
+
+                            />
+                        </form>
+
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        sx={{
+                            backgroundColor:"var(--color-green-dark)",
+                            color:"var(--color-cream)"
+                        }} autoFocus onClick={()=>{
+                        saveSpecialization();
+                    }}>
+                        Save
+                    </Button>
+                </DialogActions>
+            </BootstrapDialog>
+
         </div>
+            <BootstrapDialog
+            sx={{
+
+            }}
+            onClose={handleCloseModal}
+            aria-labelledby="customized-dialog-title"
+            open={openAddHospitalModal}
+        >
+            <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+                {/*title go here*/}
+                <IconButton>
+
+                </IconButton>
+            </DialogTitle>
+
+            <IconButton
+                aria-label="close"
+                onClick={handleCloseModal}
+                sx={(theme) => ({
+                    position: 'absolute',
+                    right: 8,
+                    top: 8,
+                    color: theme.palette.grey[500],
+                })}
+            >
+                <CloseIcon />
+            </IconButton>
+            <DialogContent dividers>
+                <Typography gutterBottom>
+
+                </Typography>
+                <Box width="500px">
+
+                    <form>
+                        <TextField
+                            id="hospital"
+                            label="Hospital Name"
+                            type="text"
+                            fullWidth
+                            value={hospitalName}
+                            onChange={(e)=>{
+                                setHospitalName(e.target.value)
+                            }}
+
+                        />
+                    </form>
+
+                </Box>
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    sx={{
+                        backgroundColor:"var(--color-green-dark)",
+                        color:"var(--color-cream)"
+                    }} autoFocus onClick={()=>{
+                    saveHospital();
+                }}>
+                    Save
+                </Button>
+            </DialogActions>
+        </BootstrapDialog>
+
+
+
+            <Box sx={{
+                marginTop:"20px",
+                marginLeft:"30px",
+                width:"100%",
+                display:"flex",
+                justifyContent:"flex-start",
+                gap:"20px"
+            }}>
+
+                <Button sx={{
+                    backgroundColor:"var(--color-green-forest)",
+                    color:"var(--color-cream)",
+                    fontWeight:"bold"
+                }} variant="contained" onClick={()=>{
+                    setOpenAddHospitalModal(true);
+                }} >
+                    + Add Hospital
+                </Button>
+
+                <Button sx={{
+                    backgroundColor:"var(--color-green-forest)",
+                    color:"var(--color-cream)",
+                    fontWeight:"bold"
+                }} variant="contained" onClick={()=>{
+                    setOpenAddSpecializationModal(true);
+                }} >
+                    + Add Specialization
+                </Button>
+            </Box>
+
+
+
             </>
     );
 }

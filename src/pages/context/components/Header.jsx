@@ -8,6 +8,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import {stopTokenRefreshInterval} from "../../../util/axiosInstance.js";
 
 const Header = ()=>{
 
@@ -35,7 +36,7 @@ const Header = ()=>{
                 <li className="list-item"><NavLink to="/context/bookings" className={({ isActive }) => isActive ? "active" : undefined}>Channeling</NavLink></li>
                 <li className="list-item"><NavLink to="/context/recents" className={({ isActive }) => isActive ? "active" : undefined}>Recent</NavLink></li>
                 <li className="list-item"><NavLink to="/context/reviews" className={({ isActive }) => isActive ? "active" : undefined}>Reviews</NavLink></li>
-                <li className="list-item"><NavLink to="/context/settings" className={({ isActive }) => isActive ? "active" : undefined}>Settings</NavLink></li>
+                {/*<li className="list-item"><NavLink to="/context/settings" className={({ isActive }) => isActive ? "active" : undefined}>Settings</NavLink></li>*/}
             </ul>
             <div className="user">
                 <span className="user-name">{localStorage.getItem("email")?.split("@")[0]}</span>
@@ -70,11 +71,10 @@ const Header = ()=>{
                                     backgroundColor:"var(--color-green-forest)"
                                 }}
                                 onClick={()=>{
-                            handleClose();
-                            localStorage.removeItem("access_token");
-                            localStorage.removeItem("refresh_token");
-                            localStorage.removeItem("email");
-                            window.location.href = "/login";
+                                    handleClose();
+                                    stopTokenRefreshInterval();
+                                    localStorage.clear();
+                                    window.location.href = "/login";
                         }} >
                             Logout
                         </Button>

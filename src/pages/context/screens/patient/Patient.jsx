@@ -106,7 +106,7 @@ const Patient = ()=>{
                 age:age
             };
             try{
-                const response = await axiosInstance.put(`http://localhost:9090/api/users/update-user/${updateUserId}`,
+                await axiosInstance.put(`http://localhost:9090/api/users/update-user/${updateUserId}`,
                     updateRequest, {headers:{Authorization:`Bearer ${localStorage.getItem("access_token")}`}});
                 fetchPatients();
                 setEnableEditMode(false)
@@ -135,7 +135,7 @@ const Patient = ()=>{
             };
 
             try {
-                const response = await axiosInstance.post("http://localhost:9090/api/users/register-patient",
+                await axiosInstance.post("http://localhost:9090/api/users/register-patient",
                     request, {headers:{Authorization:`Bearer ${localStorage.getItem("access_token")}`}});
 
                 await fetchPatients();

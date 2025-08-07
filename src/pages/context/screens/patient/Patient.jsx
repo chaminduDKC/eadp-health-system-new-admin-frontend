@@ -25,15 +25,20 @@ import {styled} from "@mui/material/styles";
 import Dialog from "@mui/material/Dialog";
 import DialogContentText from "@mui/material/DialogContentText";
 import AlertHook from '../../../../util/Alert.js'
-import EmailIcon from '@mui/icons-material/Email';
-import PhoneIcon from '@mui/icons-material/Phone';
-import HomeIcon from '@mui/icons-material/Home';
-import PersonIcon from '@mui/icons-material/Person';
-import CakeIcon from '@mui/icons-material/Cake';
-import LockIcon from '@mui/icons-material/Lock';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
+import {
 
+    Grid,
+    Divider
+} from "@mui/material";
+import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import WcIcon from '@mui/icons-material/Wc';
+import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 
 const columns = [
     { id: 'name', label: 'Name', minWidth: 100 },
@@ -49,27 +54,18 @@ const columns = [
 
 
 const Patient = ()=>{
-    const theme = useTheme();
-    const [value, setValue] = useState("0");
-
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
-    };
 
     const {alertStatus, open, showAlert, closeAlert} = AlertHook();
 
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
-    const [newEmail, setNewEmail] = useState("");
     const [address, setAddress] = useState("");
     const [phone, setPhone] = useState("");
     const [gender, setGender] = useState("");
     const [age, setAge] = useState(null);
     const [password, setPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
 
-    const [showModalPassword, setShowModalPassword] = useState(false);
 
 
     const genders = [
@@ -83,9 +79,6 @@ const Patient = ()=>{
 
     const [loading, setLoading] = useState(false);
     const [patientCount, setPatientCount] = useState(0);
-
-    const [openModalProfileDetails, setOpenModalProfileDetails] = useState(false);
-
 
 
     const handleSubmit = async (e)=>{
@@ -185,7 +178,6 @@ const Patient = ()=>{
         fetchPatients(0, newSize, searchText);
     };
 
-
     const [searchText, setSearchText] = useState("")
 
 
@@ -220,8 +212,6 @@ const Patient = ()=>{
         userId:pat.userId
     }));
 
-    const [openModal, setOpenModal] = useState(false);
-
     const [modalData, setModalData] = useState({})
 
 
@@ -249,10 +239,6 @@ const Patient = ()=>{
         },
     }));
 
-    const handleCloseModal = () => {
-        setOpenModal(false);
-        setOpenModalProfileDetails(false)
-    };
 
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -262,6 +248,7 @@ const Patient = ()=>{
     }
 
     const deletePatient = async (userId) => {
+        console.log(userId)
 
         try {
              await axiosInstance.delete(`http://localhost:9090/api/users/delete-user/${userId}`, {
@@ -280,318 +267,31 @@ const Patient = ()=>{
 
 
 
-    const handleChangePassword = async ()=>{
-        console.log(modalData.name)
-        console.log(modalData.userId)
-        await axiosInstance.put(`http://localhost:9090/api/users/update-password/${modalData.userId}`, {}, {params:{
-                password:newPassword,
-                role:"patient"
-            }} ).then((res)=>{
-            setNewPassword("")
-            console.log(res.data)
-            showAlert("success-change-password")
-            setPassword("")
-        }).catch((err)=>{
-            console.log(err)
-            showAlert("failed-change-password")
-        })
-    }
 
-    const handleChangeEmail = async ()=>{
-        await axiosInstance.put(`http://localhost:9090/api/users/update-email/${modalData.userId}`, {}, {params:{
-                email:newEmail,
-                role:"patient"
-            }} ).then((res)=>{
-            setNewEmail("")
-            fetchPatients(page, rowsPerPage, searchText)
-            console.log(res.data)
-            showAlert("success-change-email")
-            setEmail("")
-        }).catch((err)=>{
-            console.log(err)
-            showAlert("failed-change-email")
-        })
 
-    }
+
 
     const isValidEmail = /\S+@\S+\.\S+/.test(email);
     const isValidName =/^[A-Za-z\s]+$/.test(name);
-    const isValidPhone =/^\+?\d{9,12}$/.test(phone);
-    const isValidAddress =/^[A-Za-z0-9\s,.\-#\/]+$/.test(address);
     const isValidPassword = /^(?=.*[@&$])[A-Za-z0-9@&$]{6,}$/.test(password);
-    const isValidAge = /^(1[0-9]|[2-9][0-9])$/.test(age);
-    const isValidForm = isValidEmail && isValidName && isValidPhone && isValidAddress && isValidPassword && isValidAge;
+
+    const [openProfileModal, setOpenProfileModal] = useState(false);
+
+    const handleCloseProfileModal = ()=>{
+        setOpenProfileModal(false);
+    }
+
+    const infoItems = [
+        { label: 'Email', icon: <EmailIcon sx={{ color: '#d32f2f' }} />, field: 'email' },
+        { label: 'Phone', icon: <PhoneIcon sx={{ color: '#388e3c' }} />, field: 'phone' },
+        { label: 'Date of Birth', icon: <CalendarTodayIcon sx={{ color: '#f57c00' }} />, field: 'dob' },
+        { label: 'Gender', icon: <WcIcon sx={{ color: '#7b1fa2' }} />, field: 'gender' },
+        { label: 'Blood Type', icon: <BloodtypeIcon sx={{ color: '#c62828' }} />, field: 'bloodType' },
+        { label: 'Address', icon: <LocationOnIcon sx={{ color: '#0288d1' }} />, field: 'address' },
+    ];
 
     return (
         <>
-
-
-
-
-                <BootstrapDialog
-                    onClose={handleCloseModal}
-                    aria-labelledby="customized-dialog-title"
-                    open={openModalProfileDetails}
-                >
-                    <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
-                        {modalData.name}
-
-                        <IconButton aria-label="delete patient" sx={{
-                            marginLeft:"10px",
-                        }}>
-                            <DeleteIcon color="error" onClick={()=>{
-                                setDeleteModalOpen(true)
-                            }} />
-                        </IconButton>
-                    </DialogTitle>
-                    <IconButton
-                        aria-label="close"
-                        onClick={handleCloseModal}
-                        sx={(theme) => ({
-                            position: 'absolute',
-                            right: 8,
-                            top: 8,
-                            color: theme.palette.grey[500],
-                        })}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                    <DialogContent dividers>
-                        <Box>
-                            <Box sx={{
-                                display:"flex",
-                                flexDirection:"column",
-                                alignItems:"center",
-                                width:"500px",
-                                boxShadow:"rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
-                                borderRadius:"10px"
-
-                            }}>
-                                {
-                                    modalData.image? (
-                                        <img style={{width:"100px", height:"100px", borderRadius:"50%"}} src={modalData.image} alt="profile"/>
-                                    ):(
-
-                                        <IconButton sx={{
-                                            width:"160px",
-                                            height:"160px",
-                                            borderRadius:"50%"
-                                        }}>
-                                            <AccountCircleIcon sx={{
-                                                width:"160px",
-                                                height:"160px",
-                                                borderRadius:"50%"
-                                            }} />
-                                        </IconButton>
-
-                                    )}
-                                <Typography variant="h6">
-                                    {modalData.name}
-                                </Typography>
-                            </Box>
-                            <Box sx={{display:"flex", alignItems:"center", justifyContent:"space-around"}}>
-                                <Box sx={{display:"flex", gap:"10px", alignItems:"center", marginTop:"10px"}}>
-                                    <i className="fa-solid fa-envelope"></i>
-                                    <Typography>
-                                        {modalData.email}
-                                    </Typography>
-                                </Box>
-                                <Box sx={{display: "flex", gap: "10px", alignItems: "center", marginTop: "10px"}}>
-                                    <i className="fa-solid fa-location-dot"></i>
-                                    <Typography>
-                                        {modalData.address}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr 1fr",
-                                    gap: "18px",
-                                    padding: "20px",
-                                    marginTop: "12px",
-                                    width: "100%",
-                                    boxShadow:
-                                        "rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
-                                    borderRadius: "16px",
-                                }}
-                            >
-                                <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                    <i className="fa-solid fa-house" style={{ color: "#4caf50", fontSize: 20 }}></i>
-                                    <Box>
-                                        <Typography variant="caption" color="textSecondary">
-                                            City
-                                        </Typography>
-                                        <Typography variant="body1">{modalData.address}</Typography>
-                                    </Box>
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                    <i className="fa-solid fa-phone" style={{ color: "#2196f3", fontSize: 20 }}></i>
-                                    <Box>
-                                        <Typography variant="caption" color="textSecondary">
-                                            Phone
-                                        </Typography>
-                                        <Typography variant="body1">{modalData.phone}</Typography>
-                                    </Box>
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                    <i className="fa-solid fa-user-doctor" style={{ color: "#9c27b0", fontSize: 20 }}></i>
-                                    <Box>
-                                        <Typography variant="caption" color="textSecondary">
-                                            Age
-                                        </Typography>
-                                        <Typography variant="body1">{modalData.age}</Typography>
-                                    </Box>
-                                </Box>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                    <i className="fa-solid fa-hospital" style={{ color: "#ff9800", fontSize: 20 }}></i>
-                                    <Box>
-                                        <Typography variant="caption" color="textSecondary">
-                                            Gender
-                                        </Typography>
-                                        <Typography variant="body1">{modalData.gender}</Typography>
-                                    </Box>
-                                </Box>
-
-                            </Box>
-                            <Box>
-                                <Box sx={{ mt: 1.5, width: "100%" }}>
-                                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
-                                        Change Password
-                                    </Typography>
-                                    <Box sx={{
-                                        display: "flex",
-                                        gap: 2, alignItems: "center",
-
-                                        mb: 2
-                                    }}>
-                                        <TextField
-                                            label="New Password"
-                                            type={showModalPassword ? "text" : "password"}
-                                            variant="filled"
-                                            fullWidth
-                                            sx={{ backgroundColor: "var(--bg-secondary)" }}
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                        />
-
-                                        <Button
-                                            onClick={()=>{
-                                                handleChangePassword()
-                                            }}
-                                            variant="contained"
-                                            sx={{
-                                                backgroundColor: "var(--color-green-dark)",
-                                                color: "var(--color-cream)",
-                                                fontWeight: "bold",
-                                                minWidth: 120,
-                                                width: "180px",
-                                            }}
-                                        >
-                                            Update Password
-                                        </Button>
-
-
-                                    </Box>
-                                    <FormControlLabel style={{marginTop:"-30px"}} control={
-                                        <Checkbox
-                                            checked={showModalPassword}
-                                            onChange={e => setShowModalPassword(e.target.checked)}
-                                        />
-                                    }
-                                                      label="show password"
-                                                      sx={{color: "var(--text-primary)", marginTop: "10px"}}
-                                    />
-
-                                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
-                                        Change Email
-                                    </Typography>
-                                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                                        <TextField
-                                            label="New Email"
-                                            type="email"
-                                            variant="filled"
-                                            fullWidth
-                                            value={newEmail}
-                                            onChange={(e) => setNewEmail(e.target.value)}
-                                            sx={{ backgroundColor: "var(--bg-secondary)" }}
-                                        />
-                                        <Button
-                                            onClick={()=>{
-                                                handleChangeEmail(modalData.userId)
-                                            }}
-                                            variant="contained"
-                                            sx={{
-                                                backgroundColor: "var(--color-green-dark)",
-                                                color: "var(--color-cream)",
-                                                fontWeight: "bold",
-                                                minWidth: 120,
-                                                width: "180px",
-                                            }}
-                                        >
-                                            Update Email
-                                        </Button>
-                                    </Box>
-                                </Box>
-                            </Box>
-
-                        </Box>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button autoFocus onClick={handleCloseModal}>
-                            Save changes
-                        </Button>
-                    </DialogActions>
-                </BootstrapDialog>
-
-
-            <React.Fragment>
-                <Dialog
-                    open={deleteModalOpen}
-                    onClose={handleCloseDeleteModal}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                >
-                    <DialogTitle id="alert-dialog-title">
-                        {"Delete?"}
-                    </DialogTitle>
-                    <DialogContent>
-                        <DialogContentText id="alert-dialog-description">
-                            If you delete, all patient related data will be delete
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button
-                            sx={{
-                                color:"var(--color-green-forest)"
-                            }}
-                            onClick={()=>{
-                                handleCloseDeleteModal();
-                            }} autoFocus>Cancel</Button>
-                        <Button variant='contained'
-                                sx={{
-                                    backgroundColor:"var(--color-green-forest)"
-                                }}
-                                onClick={()=>{
-                                    deletePatient(modalData.userId).then(()=>{
-                                        fetchPatients().then(()=>{
-                                            setOpenModal(false);
-                                            handleCloseDeleteModal();
-                                        });
-                                    })
-
-
-                                }} >
-                            Delete
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </React.Fragment>
-
-
-
-
-
             {
                 open && (
                     <Box sx={{ width: '50%', margin: "0 auto", position: "absolute", top: "65px", right: "0", left: "0", zIndex: "14" }}>
@@ -624,6 +324,233 @@ const Patient = ()=>{
             }
 
             <div className="patient">
+                <BootstrapDialog
+                    open={openProfileModal}
+                    onClose={handleCloseProfileModal}
+                    aria-labelledby="patient-details-title"
+                    PaperProps={{
+                        sx: {
+                            width: '600px',
+                            maxWidth: '95%',
+                            borderRadius: 2
+                        }
+                    }}
+                >
+                    <DialogTitle sx={{ m: 0, p: 2 , display:"flex", alignItems:"center", justifyContent:"space-between"}} id="patient-details-title">
+                       <Box sx={{display:"flex", alignItems:"center"}}>
+                           <Typography variant="h6" fontWeight="bold">
+                               Patient Details
+                           </Typography>
+                           <IconButton sx={{marginLeft:"10px"}}>
+                               <DeleteIcon
+                                   onClick={()=>{
+                                      setDeleteModalOpen(true)
+                                   }}
+                                   color="error" />
+                           </IconButton>
+                       </Box>
+                        <IconButton
+                            aria-label="close"
+                            onClick={handleCloseProfileModal}
+                            sx={{
+                                color: (theme) => theme.palette.grey[500],
+                            }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+
+                    <DialogContent dividers>
+
+                            <Box sx={{
+                                display:"flex",
+                                alignItems:"center",
+                                width:"100%",
+                                boxShadow:"rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
+                                borderRadius:"10px",
+                                mx:"auto",
+                                marginBottom:"10px"
+
+                            }}>
+                                {
+                                    modalData.image? (
+                                        <img style={{width:"100px", height:"100px", borderRadius:"50%"}} src={modalData.image} alt="profile"/>
+                                    ):(
+
+                                        <IconButton
+                                            disabled
+                                            sx={{
+                                            width:"160px",
+                                            height:"160px",
+                                            borderRadius:"50%"
+                                        }}>
+                                            <AccountCircleIcon
+                                                sx={{
+                                                width:"160px",
+                                                height:"160px",
+                                                borderRadius:"50%"
+                                            }}
+                                            />
+                                        </IconButton>
+
+                                    )}
+                                <Typography variant="h6">
+                                    {modalData.name}
+                                </Typography>
+                            </Box>
+                        <Grid container spacing={2}>
+                            {infoItems.map((item, index) => (
+                                <Box width="48%" mx="auto">
+                                    <Paper
+                                        elevation={3}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: 2,
+                                            borderRadius: 2,
+                                            height: '100%',
+                                            width:"100%"
+                                        }}
+                                    >
+                                        {item.icon}
+                                        <Box ml={2}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                color="text.secondary"
+                                                fontWeight="medium"
+                                            >
+                                                {item.label}
+                                            </Typography>
+                                            <Typography variant="body1">
+                                                {modalData[item.field] || 'N/A'}
+                                            </Typography>
+                                        </Box>
+                                    </Paper>
+                                </Box>
+                            ))}
+                        </Grid>
+                        {/**/}
+
+
+
+                        {/**/}
+                        <Box sx={{display:"flex",height:"40px", width:"100%", gap:"30px", mx:"auto", marginTop:"20px"}}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                sx={{
+                                    height: '100%',
+                                    '& .MuiInputBase-root': {
+                                        height: '100%',
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        height: '100%',
+                                        boxSizing: 'border-box',
+                                        padding: '10px 14px', // optional: adjust vertical alignment
+                                    }
+                                }}
+                            />
+                            <Button sx={{
+                                backgroundColor:"var(--color-green-forest)",
+                                color:"var(--color-cream)",
+                                width:"300px"
+                            }}
+                                    onClick={()=>{
+
+                                    }}
+                            >change email</Button>
+
+                        </Box>
+                        <Box sx={{display:"flex",height:"40px", width:"100%", gap:"30px", mx:"auto", marginTop:"20px"}}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                sx={{
+                                    height: '100%',
+                                    '& .MuiInputBase-root': {
+                                        height: '100%',
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        height: '100%',
+                                        boxSizing: 'border-box',
+                                        padding: '10px 14px', // optional: adjust vertical alignment
+                                    }
+                                }}
+                            />
+                            <Button sx={{
+                                backgroundColor:"var(--color-green-forest)",
+                                color:"var(--color-cream)",
+                                width:"300px"
+                            }}
+                                    onClick={()=>{
+
+                                    }}
+                            >change password</Button>
+
+                        </Box>
+                    </DialogContent>
+
+                    <DialogActions>
+                        <Button
+                            onClick={handleCloseProfileModal}
+                            sx={{
+                                backgroundColor: "var(--color-green-dark)",
+                                color: "var(--color-cream)",
+                                '&:hover': {
+                                    backgroundColor: "var(--color-green-forest)",
+                                }
+                            }}
+                        >
+                            Close
+                        </Button>
+                    </DialogActions>
+                </BootstrapDialog>
+
+                {/*delete modal*/}
+                <React.Fragment>
+                    <Dialog
+                        open={deleteModalOpen}
+                        onClose={handleCloseDeleteModal}
+                        aria-labelledby="alert-dialog-title"
+                        aria-describedby="alert-dialog-description"
+                    >
+                        <DialogTitle id="alert-dialog-title">
+                            {"Delete?"}
+                        </DialogTitle>
+                        <DialogContent>
+                            <DialogContentText id="alert-dialog-description">
+                                If you delete, all patient related data will be delete
+                            </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button
+                                sx={{
+                                    color:"var(--color-green-forest)"
+                                }}
+                                onClick={()=>{
+                                    handleCloseDeleteModal();
+                                }} autoFocus>Cancel</Button>
+                            <Button variant='contained'
+                                    sx={{
+                                        backgroundColor:"var(--color-green-forest)"
+                                    }}
+                                    onClick={()=>{
+                                        deletePatient(modalData.userId).then(()=>{
+                                            fetchPatients().then(()=>{
+                                                handleCloseDeleteModal();
+                                                handleCloseProfileModal();
+                                            });
+                                        })
+
+
+                                    }} >
+                                Delete
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                </React.Fragment>
+
+
                 <div className="form-section">
                     <form>
                         <TextField
@@ -835,7 +762,7 @@ const Patient = ()=>{
                                                                         <IconButton>
                                                                             <CalendarMonthIcon onClick={() => {
                                                                                 setModalData(row)
-                                                                                setOpenModalProfileDetails(true)
+                                                                                setOpenProfileModal(true)
 
                                                                             }}/>
                                                                         </IconButton>
@@ -872,7 +799,7 @@ const Patient = ()=>{
                         />
                     </Paper>
                 </div>
-            </div>
+                </div>
         </>
     )
 }

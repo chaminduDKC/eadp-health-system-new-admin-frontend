@@ -406,13 +406,7 @@ const Channeling = ()=>{
                         </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                        {/*<Button*/}
-                        {/*    sx={{ color: "var(--color-green-forest)" }}*/}
-                        {/*    onClick={handleCloseStatusModal}*/}
-                        {/*    autoFocus*/}
-                        {/*>*/}
-                        {/*    Cancel*/}
-                        {/*</Button>*/}
+
                         <Button
                             variant="contained"
                             sx={{ backgroundColor: "var(--color-green-forest)" }}

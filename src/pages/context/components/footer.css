@@ -1,6 +1,9 @@
 .footer{
 
     height: 3vh;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
     display: flex;
     justify-content: space-between;
     padding: 0 20px;

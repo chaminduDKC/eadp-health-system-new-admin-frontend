@@ -118,29 +118,7 @@ const Doctor = ()=>{
     const [experience, setExperience] = useState("");
     const [licenceNo, setLicenceNo] = useState("");
 
-    const hospitals = [
-        {
-            value: "General Hospital - Matara",
-            label: "General Hospital = Matara"
-        },
-        {
-            value: "Asiri Hospital - Matara",
-            label: "Asiri Hospital - Matara"
-        },
-        {
-            value: "Labeema Hospital - Kotawila",
-            label: "Labeema Hospital - Kotawila"
-        },
-        {
-            value: "Karapitiya Teaching Hospital - Galle",
-            label: "Karapitiya Teaching Hospital - Galle"
-        },
-        {
-            value: "Ruhunu Hospital - Galle",
-            label: "Ruhunu Hospital - Galle"
-        }
-
-    ]
+    const [hospitals, setHospitals] = useState([]);
     const cities = ["Matara", "Galle"];
     const [doctors, setDoctors] = useState([]);
     const [error, setError] = useState(null);
@@ -451,6 +429,7 @@ const Doctor = ()=>{
     useEffect(() => {
         fetchDoctors(page, rowsPerPage, searchText)
         fetchSpecializations();
+        fetchHospitals();
     }, []);
 
     const handleAvailableTimes = async (doctorId)=>{
@@ -474,10 +453,6 @@ const Doctor = ()=>{
 
         const timeStringEnd = `${formattedEndHours}:${formattedEndMinutes}`;
 
-        console.log(formattedDate)
-        console.log(doctorId)
-        console.log(timeStringStart)
-        console.log(timeStringEnd)
 
         try {
             const requestBody = {
@@ -486,7 +461,7 @@ const Doctor = ()=>{
                 startTime:timeStringStart,
                 endTime:timeStringEnd
             }
-            const response = await axiosInstance.post("http://localhost:9093/api/availabilities/save-availabilities", requestBody).then(
+            await axiosInstance.post("http://localhost:9093/api/availabilities/save-availabilities", requestBody).then(
                 response =>{
                     showAlert("success-set-date")
                     console.log(response)
@@ -495,7 +470,6 @@ const Doctor = ()=>{
                 showAlert("failed-set-date")
                 console.log("Failed Request")
             })
-            console.log(response);
         } catch (e) {
             console.log(e)
         }
@@ -523,6 +497,9 @@ const Doctor = ()=>{
 
         setAlreadySelectedDates(res.data.data)
         console.log(res.data.data);
+    }).catch(err=>{
+        showAlert("failed-availabilities")
+        console.log(err)
     })
 
 }
@@ -536,6 +513,19 @@ const Doctor = ()=>{
         } catch (error) {
             console.error("Error fetching specializations:", error);
         }
+    }
+
+    const fetchHospitals =  async ()=>{
+
+            await axiosInstance.get("http://localhost:9091/api/hospitals/find-all-hospitals", {params:{
+                searchText:""
+                }}).then(res=>{
+                    setHospitals(res.data.data)
+            }).catch(err=>{
+                console.log(err)
+                showAlert("Error "+err)
+            })
+
     }
 
     const handleChangePassword = async ()=>{
@@ -654,7 +644,7 @@ const Doctor = ()=>{
                                 marginTop:"12px"
                             }}>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DateCalendar  shouldDisableDate={(date) =>
+                                    <DateCalendar disablePast  shouldDisableDate={(date) =>
                                         alreadySelectedDates.includes(date.format('YYYY-MM-DD'))
                                     } value={selectedDate} onChange={(newValue) => setSelectedDate(newValue)} />
 
@@ -702,7 +692,6 @@ const Doctor = ()=>{
                            <Box>
                                <Box sx={{
                                    display:"flex",
-                                   flexDirection:"column",
                                    alignItems:"center",
                                    width:"100%",
                                    boxShadow:"rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px",
@@ -1011,6 +1000,7 @@ const Doctor = ()=>{
                                 {alertStatus === "failed-phone" && "Invalid phone number"}
                                 {alertStatus === "success-change-password" && "Password changed successfully"}
                                 {alertStatus === "failed-change-password" && "Failed to change the password"}
+                                {alertStatus === "failed-availabilities" && "Failed to load data. Try again."}
                             </Alert>
                         </Collapse>
                     </Box>
@@ -1505,7 +1495,7 @@ const Doctor = ()=>{
 
             <Box sx={{
                 marginTop:"20px",
-                marginLeft:"30px",
+                paddingLeft:"30px",
                 width:"100%",
                 display:"flex",
                 justifyContent:"flex-start",
